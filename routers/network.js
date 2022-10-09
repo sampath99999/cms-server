@@ -1,44 +1,78 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const networkModel = require("./../models/network")
-const bcrypt = require('bcrypt');
-const logger = require('./../includes/logger');
+const networkModel = require("./../models/network");
+const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
+const errors = require("../includes/errors");
 
 // Register route
 router.post("/register", async (req, res) => {
-    try{
-
+    try {
         // Get details from req
-        var networkDetails = req.body
-        
+        var networkDetails = req.body;
+
+        // Checking if exists
+        var networkFromDB = await networkModel.findOne({ username });
+        if (networkFromDB) {
+            // Username already registered
+            return res.status(500).send({ error: errors.alreadyExists });
+        }
+
         // Encrypting password
-        networkDetails.password = await bcrypt.hashSync(networkDetails.password, await bcrypt.genSaltSync(10))
+        networkDetails.password = await bcrypt.hashSync(
+            networkDetails.password,
+            await bcrypt.genSaltSync(10)
+        );
 
         // creating new network
-        var network = new networkModel(networkDetails)
-        await network.save()
-
-        // Logging
-        logger({
-            from: 'networkRouter/register',
-            log: 'Network created',
-            id: network._id
-        })
+        var network = new networkModel(networkDetails);
+        await network.save();
 
         // sending successful
-        res.status(200).send()
-
-    } catch(err) {
-        logger({
-            from: 'networkRouter/register',
-            log: 'ERROR',
-            err: err.message
-        })
+        res.status(200).send();
+    } catch (err) {
         // sending error
         res.status(500).send({
-            error: err.message
-        })
+            error: errors.somethingWentWrong,
+        });
     }
-})
+});
+
+router.post("/login", async (req, res) => {
+    try {
+        // Getting credentials
+        var username = req.body.username;
+        var password = req.body.password;
+
+        // Getting user from db using username
+        var networkFromDB = await networkModel.findOne({ username });
+        if (!networkFromDB) {
+            // Username not found
+            return res.status(500).send({ error: errors.badCredentials });
+        }
+
+        // Comparing password with bycrypt
+        if (bcrypt.compareSync(password, networkFromDB.password) == true) {
+            // Getting token using JWT
+            var token = await jwt.sign(
+                { id: networkFromDB._id },
+                process.env.SECRET
+            );
+
+            // Send token to client
+            res.status(200).send({
+                token,
+            });
+        } else {
+            // Password is incorrect
+            return res.status(500).send({ error: errors.badCredentials });
+        }
+    } catch (err) {
+        res.status(500).send({
+            error: errors.somethingWentWrong,
+            message: err.message,
+        });
+    }
+});
 
 module.exports = router;

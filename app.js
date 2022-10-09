@@ -2,6 +2,7 @@ const express = require("express");
 const mongoose = require("mongoose");
 const dotenv = require("dotenv");
 var bodyParser = require('body-parser')
+const cors = require('cors');
 
 // Router variables
 const networkRouter = require("./routers/network");
@@ -13,6 +14,7 @@ const PORT = process.env.PORT || 3000;
 // Middleware configuration
 dotenv.config()
 app.use(bodyParser.json())
+app.use(cors())
 
 // Connecting to DB
 dbConnect().catch((err) => {
