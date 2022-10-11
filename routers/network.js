@@ -75,4 +75,33 @@ router.post("/login", async (req, res) => {
     }
 });
 
+// Get username from id
+router.post("/getusername", async (req, res) => {
+    try{
+        var token = req.body.token;
+        // getting network id from token
+        var decoded = await jwt.decode(token, process.env.SECRET);
+
+        // Getting network from db using id
+        var network = await networkModel.findOne({ _id: decoded.id });
+
+        // checking if network exists
+        if(!network){
+            res.status(500).send({
+                error: "Logout",
+                message: errors.wrongToken
+            })
+        } else {
+            res.status(200).send({
+                username: network.username
+            })
+        }
+    } catch (err) {
+        res.status(500).send({
+            error: errors.somethingWentWrong,
+            message: err.message
+        })
+    }
+})
+
 module.exports = router;
