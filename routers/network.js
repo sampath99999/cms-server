@@ -104,4 +104,33 @@ router.post("/getusername", async (req, res) => {
     }
 })
 
+// Get user details from id
+router.post("/getUserDetails", async (req, res) => {
+    try{
+        var token = req.body.token;
+        // getting network id from token
+        var decoded = await jwt.decode(token, process.env.SECRET);
+
+        // Getting network from db using id
+        var network = await networkModel.findOne({ _id: decoded.id }, { _id: 0, password: 0, createdAt: 0, status: 0 });
+
+        // checking if network exists
+        if(!network){
+            res.status(500).send({
+                error: "Logout",
+                message: errors.wrongToken
+            })
+        } else {
+            res.status(200).send({
+                data: network
+            })
+        }
+    } catch (err) {
+        res.status(500).send({
+            error: errors.somethingWentWrong,
+            message: err.message
+        })
+    }
+})
+
 module.exports = router;
