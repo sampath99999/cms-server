@@ -4,10 +4,12 @@ const dotenv = require("dotenv");
 var bodyParser = require("body-parser");
 const cors = require("cors");
 const networkModel = require("./models/network");
+const { wrongToken } = require("./includes/errors");
+const jwt = require("jsonwebtoken");
+var morgan = require('morgan')
+
 // Router variables
 const networkRouter = require("./routers/network");
-const jwt = require("jsonwebtoken");
-const { wrongToken } = require("./includes/errors");
 
 // Initialize express
 const app = express();
@@ -17,6 +19,7 @@ const PORT = process.env.PORT || 3000;
 dotenv.config();
 app.use(bodyParser.json());
 app.use(cors());
+app.use(morgan(':method :url :status :res[content-length] - :response-time ms'))
 
 // Connecting to DB
 dbConnect().catch((err) => {
