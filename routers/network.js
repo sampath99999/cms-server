@@ -79,7 +79,7 @@ router.post("/login", async (req, res) => {
 
 // Get username from id
 router.post("/getusername", async (req, res) => {
-    try{
+    try {
         var token = req.body.token;
         // getting network id from token
         var decoded = await jwt.decode(token, process.env.SECRET);
@@ -88,51 +88,92 @@ router.post("/getusername", async (req, res) => {
         var network = await networkModel.findOne({ _id: decoded.id });
 
         // checking if network exists
-        if(!network){
+        if (!network) {
             res.status(500).send({
                 error: "Logout",
-                message: errors.wrongToken
-            })
+                message: errors.wrongToken,
+            });
         } else {
             res.status(200).send({
-                username: network.username
-            })
+                username: network.username,
+            });
         }
     } catch (err) {
         res.status(500).send({
             error: errors.somethingWentWrong,
-            message: err.message
-        })
+            message: err.message,
+        });
     }
-})
+});
 
 // Get user details from id
 router.post("/getUserDetails", async (req, res) => {
-    try{
+    try {
         var token = req.body.token;
         // getting network id from token
         var decoded = await jwt.decode(token, process.env.SECRET);
 
         // Getting network from db using id
-        var network = await networkModel.findOne({ _id: decoded.id }, { _id: 0, password: 0, createdAt: 0, status: 0 });
+        var network = await networkModel.findOne(
+            { _id: decoded.id },
+            { _id: 0, password: 0, createdAt: 0, status: 0 }
+        );
 
         // checking if network exists
-        if(!network){
+        if (!network) {
             res.status(500).send({
                 error: "Logout",
-                message: errors.wrongToken
-            })
+                message: errors.wrongToken,
+            });
         } else {
             res.status(200).send({
-                data: network
-            })
+                data: network,
+            });
         }
     } catch (err) {
         res.status(500).send({
             error: errors.somethingWentWrong,
-            message: err.message
-        })
+            message: err.message,
+        });
     }
-})
+});
+
+// update password
+router.post("/updatePassword", async (req, res) => {
+    try {
+        // getting old and new password
+        var oldPassword = req.body.oldPassword;
+        var newPassword = req.body.newPassword;
+
+        // getting token
+        var decoded = await jwt.decode(req.body.token, process.env.SECRET);
+
+        // getting network
+        var network = await networkModel.findOne({ _id: decoded.id });
+
+        // checking if old password is correct
+        if (await bcrypt.compareSync(oldPassword, network.password)) {
+            // Generating salt and hashing password
+            var hash = await bcrypt.hashSync(
+                newPassword,
+                bcrypt.genSaltSync(10)
+            );
+
+            // Changing password
+            network.password = hash;
+            network.save();
+            res.status(200).send({});
+        } else {
+            res.status(500).send({
+                message: errors.wrongOldPassword,
+            });
+        }
+    } catch (err) {
+        res.status(500).send({
+            error: "LOGOUT",
+            message: errors.somethingWentWrong,
+        });
+    }
+});
 
 module.exports = router;
