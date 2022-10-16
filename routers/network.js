@@ -7,12 +7,13 @@ const errors = require("../includes/errors");
 
 // Register route
 router.post("/register", async (req, res) => {
+    console.log(req.body)
     try {
         // Get details from req
         var networkDetails = req.body;
 
         // Checking if exists
-        var networkFromDB = await networkModel.findOne({ username });
+        var networkFromDB = await networkModel.findOne({ username:networkDetails.username });
         if (networkFromDB) {
             // Username already registered
             return res.status(500).send({ error: errors.alreadyExists });
@@ -34,6 +35,7 @@ router.post("/register", async (req, res) => {
         // sending error
         res.status(500).send({
             error: errors.somethingWentWrong,
+            message: err
         });
     }
 });
